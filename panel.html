@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de coordinación | Biblioteca Pública</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="inicioSesion" class="inicio-sesion">
+        <h2>Acceso al panel de coordinación</h2>
+        <p>Ingresá con tu cuenta de bibliotecólogo.</p>
+
+        <form id="formularioLogin">
+            <label for="carnetLogin">Número de carné</label>
+            <input type="text" id="carnetLogin" required placeholder="Ej. BIB-000001">
+
+            <label for="claveLogin">Contraseña</label>
+            <input type="password" id="claveLogin" required>
+
+            <button type="submit">Ingresar</button>
+            <p id="mensajeLogin"></p>
+        </form>
+    </div>
+
+    <div class="panel" style="display: none;">
+
+        <aside class="sidebar">
+            <h2>Biblioteca Pública</h2>
+            <p>Miguel Obregón Lizano</p>
+
+            <nav>
+                <a href="#" class="activo" onclick="return false;">Inicio</a>
+                <a href="#">Ingresos</a>
+                <a href="#">Atención</a>
+                <a href="#">Personas</a>
+                <a href="#">Incidentes</a>
+                <a href="#">Informes</a>
+                <a href="#seccionActividades">Actividades</a>
+                <a href="#seccionSolicitudes">Solicitudes</a>
+            </nav>
+        </aside>
+
+        <main class="contenido">
+
+            <header>
+                <div>
+                    <h1>Panel de coordinación - prueba</h1>
+                    <p>Control de ingreso y seguimiento de la biblioteca</p>
+                    <p id="fechaActual"></p>
+                </div>
+                <span>Área de bibliotecología</span>
+            </header>
+
+            <section class="resumen">
+                <article class="tarjeta">
+                    <h3>Ingresos de hoy</h3>
+                    <p id="totalIngresos">0</p>
+                </article>
+
+                <article class="tarjeta">
+                    <h3>Atenciones pendientes</h3>
+                    <p id="atencionesPendientes">0</p>
+                </article>
+
+                <article class="tarjeta">
+                    <h3>Alertas pendientes</h3>
+                    <p id="alertasPendientes">0</p>
+                </article>
+
+                <article class="tarjeta">
+                    <h3>Incidentes registrados</h3>
+                    <p id="totalIncidentes">0</p>
+                </article>
+            </section>
+
+            <section class="seccion">
+                <h2>Solicitudes de atención</h2>
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Número de carné</th>
+                            <th>Motivo de consulta</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAtenciones">
+                        <tr>
+                            <td colspan="4">No hay solicitudes pendientes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="seccion">
+                <h2>Actividad reciente</h2>
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Número de carné</th>
+                            <th>Actividad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaIngresos">
+                        <tr>
+                            <td colspan="4">No hay ingresos para mostrar.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="seccion">
+                <h2>Alertas y situaciones para revisar</h2>
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>Fecha y hora</th>
+                            <th>Tipo de alerta</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAlertas">
+                        <tr>
+                            <td colspan="4">No hay alertas pendientes.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            
+<section class="seccion" id="seccionIncidencias">
+    <h2>Registro de incidencias</h2>
+
+    <div class="acciones-incidencias">
+        <button type="button" id="btnNuevaIncidencia">
+            Registrar incidencia
+        </button>
+    </div>
+
+    <div id="formularioIncidencia" hidden>
+        <h3>Nueva incidencia</h3>
+
+        <label for="tipoIncidencia">Tipo de incidencia</label>
+        <select id="tipoIncidencia" required>
+            <option value="">Seleccioná una categoría</option>
+            <option value="Altercado o conflicto entre personas">Altercado o conflicto entre personas</option>
+            <option value="Amenaza o intimidación">Amenaza o intimidación</option>
+            <option value="Conducta inapropiada">Conducta inapropiada</option>
+            <option value="Daño a instalaciones o mobiliario">Daño a instalaciones o mobiliario</option>
+            <option value="Hurto o pérdida de bienes">Hurto o pérdida de bienes</option>
+            <option value="Emergencia médica">Emergencia médica</option>
+            <option value="Alteración del orden o convivencia">Alteración del orden o convivencia</option>
+            <option value="Situación relacionada con consumo de sustancias">Situación relacionada con consumo de sustancias</option>
+            <option value="Situación de seguridad en los alrededores">Situación de seguridad en los alrededores</option>
+            <option value="Otro">Otro</option>
+        </select>
+
+        <label for="relacionPersona">Relación con la persona</label>
+        <select id="relacionPersona" required>
+            <option value="">Seleccioná una opción</option>
+            <option value="Con carné">Persona con carné</option>
+            <option value="Sin carné">Persona sin carné</option>
+            <option value="General">Incidencia general</option>
+        </select>
+
+        <div id="datosPersonaIncidencia" hidden>
+            <label for="carnetIncidencia">Número de carné</label>
+            <input
+                type="text"
+                id="carnetIncidencia"
+                placeholder="Ej. BIB-000001"
+            >
+
+            <label for="nombrePersonaIncidencia">Nombre de la persona</label>
+            <input
+                type="text"
+                id="nombrePersonaIncidencia"
+                placeholder="Nombre, si se conoce"
+            >
+        </div>
+
+        <label for="descripcionIncidencia">Descripción de lo ocurrido</label>
+        <textarea
+            id="descripcionIncidencia"
+            rows="5"
+            placeholder="Describí los hechos de manera objetiva..."
+            required
+        ></textarea>
+
+        <label for="accionesIncidencia">Acciones realizadas</label>
+        <textarea
+            id="accionesIncidencia"
+            rows="3"
+            placeholder="Describí cómo respondió el personal..."
+        ></textarea>
+
+        <p id="mensajeIncidencia"></p>
+
+        <button type="button" id="guardarIncidencia">
+            Guardar incidencia
+        </button>
+
+        <button type="button" id="cancelarIncidencia">
+            Cancelar
+        </button>
+    </div>
+
+    <hr>
+
+    <h3>Historial de incidencias</h3>
+
+    <input
+        type="search"
+        id="buscarIncidencias"
+        placeholder="Buscar por carné, nombre, tipo o descripción..."
+    >
+<button type="button" id="descargarIncidencias">
+    Descargar Excel
+</button>
+    <label for="filtroRelacionIncidencia">Filtrar registros</label>
+    <select id="filtroRelacionIncidencia">
+        <option value="">Todas las incidencias</option>
+        <option value="Con carné">Con carné</option>
+        <option value="Sin carné">Sin carné</option>
+        <option value="General">Generales</option>
+        
+    </select>
+<div id="historialIncidencias">
+    <p>Cargando incidencias...</p>
+</div>
+    
+<div id="detalleIncidencia" hidden class="ficha-incidencia">
+    <h3>Detalle de la incidencia</h3>
+
+    <p><strong>Fecha:</strong> <span id="detalleFecha"></span></p>
+    <p><strong>Tipo:</strong> <span id="detalleTipo"></span></p>
+    <p><strong>Relación:</strong> <span id="detalleRelacion"></span></p>
+    <p><strong>Persona:</strong> <span id="detallePersona"></span></p>
+
+    <h4>Descripción de lo ocurrido</h4>
+    <p id="detalleDescripcion"></p>
+
+    <h4>Acciones realizadas</h4>
+    <p id="detalleAcciones"></p>
+
+    <button type="button" id="cerrarDetalleIncidencia">
+        Cerrar detalles
+    </button>
+</div>
+
+</section>
+
+<section class="seccion" id="seccionSolicitudes">
+    <h2>Solicitudes de carné</h2>
+    <p>Revisión y clasificación de personas solicitantes.</p>
+
+    <button type="button" id="botonCargarSolicitudes">
+        Actualizar solicitudes
+    </button>
+
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Nombre completo</th>
+                <th>Cédula</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tablaSolicitudes">
+            <tr>
+                <td colspan="5">Presioná actualizar para consultar las solicitudes.</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+<section class="seccion" id="seccionActividades">
+    <h2>Administrar actividades</h2>
+    <p>Agregá actividades o cambiá su estado para controlar cuáles aparecen en el registro de asistencia.</p>
+
+    <div class="formulario-actividad">
+        <label for="nombreNuevaActividad">Nombre de la actividad</label>
+        <input
+            type="text"
+            id="nombreNuevaActividad"
+            placeholder="Ej. Club de lectura"
+        >
+
+        <button type="button" id="agregarActividad">
+            Agregar actividad
+        </button>
+
+        <p id="mensajeActividad"></p>
+    </div>
+
+    <h3>Actividades registradas</h3>
+
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Actividad</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tablaActividades">
+            <tr>
+                <td colspan="3">Cargando actividades...</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+<!-- FICHA DE REVISIÓN DE SOLICITUD -->
+
+<div id="fichaSolicitud" class="modal-solicitud" style="display: none;">
+    <div class="contenido-modal">
+
+        <h2>Revisión de solicitud</h2>
+
+        <input type="hidden" id="solicitudId">
+
+        <h3>Datos de la persona</h3>
+
+        <p><strong>Nombre:</strong> <span id="detalleNombre"></span></p>
+        <p><strong>Cédula:</strong> <span id="detalleCedula"></span></p>
+        <p><strong>Fecha de nacimiento:</strong> <span id="detalleNacimiento"></span></p>
+        <p><strong>Correo:</strong> <span id="detalleCorreo"></span></p>
+        <p><strong>Teléfono:</strong> <span id="detalleTelefono"></span></p>
+        <p><strong>Domicilio:</strong> <span id="detalleDomicilio"></span></p>
+        <p><strong>Discapacidad:</strong> <span id="detalleDiscapacidad"></span></p>
+
+        <hr>
+
+        <h3>Clasificación</h3>
+
+        <label for="categoriaSolicitud">Categoría</label>
+        <select id="categoriaSolicitud">
+            <option value="Asociado">Asociado</option>
+            <option value="Tallerista o colaborador">Tallerista o colaborador</option>
+            <option value="Personal">Personal</option>
+        </select>
+
+        <div id="contenedorSubcategoria" style="display: none;">
+            <label for="subcategoriaSolicitud">Tipo de personal</label>
+            <select id="subcategoriaSolicitud">
+                <option value="">Seleccioná una opción</option>
+                <option value="Bibliotecólogo">Bibliotecólogo</option>
+                <option value="Otro personal">Otro personal</option>
+            </select>
+        </div>
+
+        <p id="mensajeRevision"></p>
+
+<button type="button" id="aprobarSolicitud">
+    Aprobar solicitud
+</button>
+
+<button type="button" id="rechazarSolicitud">
+    Rechazar solicitud
+</button>
+
+<button type="button" id="cerrarFicha">
+    Cerrar
+</button>
+
+    </div>
+</div>
+        </main>
+    </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="panel.js"></script>
+
+    <script>
+        document.getElementById("fechaActual").textContent =
+            new Intl.DateTimeFormat("es-CR", {
+                dateStyle: "full",
+                timeZone: "America/Costa_Rica"
+            }).format(new Date());
+    </script>
+
+</body>
+</html>
