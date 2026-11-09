@@ -1,0 +1,102 @@
+
+/* =========================================
+   PANEL DE COORDINACIÓN
+   Estilos independientes del panel
+   ========================================= */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #f4f6f9;
+    color: #263445;
+    font-family: Arial, sans-serif;
+}
+
+/* ENCABEZADO Y MENÚ AZUL */
+
+.panel .sidebar {
+    width: 100%;
+    box-sizing: border-box;
+    background: #173b5e;
+    color: white;
+    padding: 20px 35px;
+}
+
+.panel .sidebar h2 {
+    color: white;
+    font-size: 22px;
+    text-align: left;
+    margin: 0 0 5px;
+}
+
+.panel .sidebar p {
+    color: #d5e1ed;
+    font-size: 14px;
+    text-align: left;
+    margin: 0 0 20px;
+}
+
+.panel .sidebar nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.panel .sidebar nav a {
+    color: white;
+    text-decoration: none;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.panel .sidebar nav a:hover,
+.panel .sidebar nav a.activo {
+    background: #2c577e;
+}
+
+/* CONTENIDO PRINCIPAL */
+
+.panel .contenido {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 35px;
+    min-width: 0;
+}
+
+.panel .contenido header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 15px;
+}
+
+.panel .contenido header h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    text-align: left;
+}
+
+.panel .contenido header p {
+    margin: 0;
+    color: #687789;
+    text-align: left;
+}
+
+.panel .contenido header span {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+/* TARJETAS DE RESUMEN */
+
+
+    .tabla {
+        min-width: 550px;
+    }
+}
