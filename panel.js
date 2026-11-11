@@ -315,6 +315,80 @@ async function aprobarSolicitud() {
     await cargarSolicitudes();
 }
 
+ // CANCELAR SOLICITUD DE CARNÉ
+
+const botonCancelarSolicitud =
+    document.getElementById("cancelarSolicitud");
+
+botonCancelarSolicitud.addEventListener(
+    "click",
+    cancelarSolicitud
+);
+
+async function cancelarSolicitud() {
+    const solicitudId =
+        document.getElementById("solicitudId").value;
+
+    const mensaje =
+        document.getElementById("mensajeRevision");
+
+    const confirmar = confirm(
+        "¿Estás seguro de que querés cancelar esta solicitud? " +
+        "La solicitud se conservará en el historial."
+    );
+
+    if (!confirmar) return;
+
+    botonCancelarSolicitud.disabled = true;
+    botonCancelarSolicitud.textContent = "Cancelando...";
+    mensaje.textContent = "Procesando cancelación...";
+
+    try {
+        const { data, error } =
+            await supabasePanel.functions.invoke(
+                "cancelar-solicitud-carnet",
+                {
+                    body: {
+                        solicitud_id: Number(solicitudId)
+                    }
+                }
+            );
+
+        if (error || !data?.success) {
+            let detalle = data;
+
+            if (error?.context?.json) {
+                try {
+                    detalle = await error.context.json();
+                } catch (_) {}
+            }
+
+            mensaje.textContent =
+                detalle?.error ||
+                "No se pudo cancelar la solicitud.";
+
+            return;
+        }
+
+        document.getElementById("fichaSolicitud")
+            .style.display = "none";
+
+        await cargarSolicitudes();
+
+        alert("Solicitud cancelada correctamente.");
+
+    } catch (error) {
+        console.error("Error al cancelar:", error);
+        mensaje.textContent =
+            "Ocurrió un error al cancelar la solicitud.";
+
+    } finally {
+        botonCancelarSolicitud.disabled = false;
+        botonCancelarSolicitud.textContent =
+            "Cancelar solicitud";
+    }
+}
+
 // ==========================================
 // MÓDULO DE INCIDENCIAS: CONTROLES DEL FORMULARIO
 // ==========================================
