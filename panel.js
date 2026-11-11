@@ -921,7 +921,6 @@ botonAgregarActividad.addEventListener("click", agregarNuevaActividad);
 
 
 async function descargarAsistencias(nombreActividad, mes) {
-        alert("Entramos a descargarAsistencias");
     if (!mes) {
         alert("Seleccioná un mes válido.");
         return;
