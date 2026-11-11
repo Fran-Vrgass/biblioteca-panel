@@ -803,10 +803,7 @@ function mostrarActividades(actividades) {
         botonExcel.type = "button";
         botonExcel.textContent = "Descargar Excel";
 
-      botonExcel.addEventListener("click", () => {
-    alert("PRUEBA DE DESCARGA");
-    alert("El botón de asistencias funciona");
-
+botonExcel.addEventListener("click", () => {
     descargarAsistencias(
         actividad.nombre,
         selectorMes.value
