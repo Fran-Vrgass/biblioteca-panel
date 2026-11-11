@@ -786,6 +786,17 @@ function mostrarActividades(actividades) {
             });
 
             celdaAccion.appendChild(botonEliminar);
+            
+const botonExcel = document.createElement("button");
+botonExcel.type = "button";
+botonExcel.textContent = "Descargar Excel";
+
+botonExcel.addEventListener("click", () => {
+    descargarAsistencias(actividad.nombre);
+});
+
+celdaAccion.appendChild(botonExcel);
+
         }
 
         fila.append(celdaNombre, celdaEstado, celdaAccion);
@@ -873,3 +884,46 @@ async function eliminarActividad(id) {
     await cargarActividades();
 }
 botonAgregarActividad.addEventListener("click", agregarNuevaActividad);
+
+async function descargarAsistencias(nombreActividad) {
+    const { data, error } = await supabasePanel.functions.invoke(
+        "consultar-asistencias",
+        {
+            body: { actividad: nombreActividad }
+        }
+    );
+
+    if (error || !data?.success) {
+        alert(data?.error || "No se pudieron consultar las asistencias.");
+        console.error("Error al descargar asistencias:", error || data);
+        return;
+    }
+
+    if (!data.asistencias?.length) {
+        alert("Esta actividad no tiene asistencias registradas.");
+        return;
+    }
+
+    const registros = data.asistencias.map(asistencia => ({
+        "Carné": asistencia.carnet,
+        "Actividad": asistencia.actividad,
+        "Fecha y hora": new Date(asistencia.fecha_hora)
+            .toLocaleString("es-CR", {
+                timeZone: "America/Costa_Rica"
+            })
+    }));
+
+    const hoja = XLSX.utils.json_to_sheet(registros);
+    const libro = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(libro, hoja, "Asistencias");
+
+    const nombreSeguro = nombreActividad
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .slice(0, 80);
+
+    XLSX.writeFile(
+        libro,
+        `Asistencias_${nombreSeguro}.xlsx`
+    );
+}
