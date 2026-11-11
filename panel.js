@@ -916,14 +916,20 @@ async function eliminarActividad(id) {
 }
 botonAgregarActividad.addEventListener("click", agregarNuevaActividad);
 
+
 async function descargarAsistencias(nombreActividad, mes) {
+    if (!mes) {
+        alert("Seleccioná un mes válido.");
+        return;
+    }
+
     const { data, error } = await supabasePanel.functions.invoke(
         "consultar-asistencias",
         {
-     body: {
-    actividad: nombreActividad,
-    mes: mes
-}
+            body: {
+                actividad: nombreActividad,
+                mes: mes
+            }
         }
     );
 
@@ -934,23 +940,58 @@ async function descargarAsistencias(nombreActividad, mes) {
     }
 
     if (!data.asistencias?.length) {
-        alert("Esta actividad no tiene asistencias registradas.");
+        alert("Esta actividad no tiene asistencias registradas en el mes seleccionado.");
         return;
     }
 
     const registros = data.asistencias.map(asistencia => ({
-        "Carné": asistencia.carnet,
-        "Actividad": asistencia.actividad,
+        "Número de carné": asistencia.carnet || "",
+        "Nombre completo": asistencia.nombre_completo || "",
+        "Cédula": asistencia.cedula || "",
+        "Fecha de nacimiento": asistencia.fecha_nacimiento || "",
+        "Correo electrónico": asistencia.correo || "",
+        "Teléfono": asistencia.telefono || "",
+        "Domicilio": asistencia.domicilio || "",
+        "Tiene discapacidad":
+            asistencia.tiene_discapacidad === null ||
+            asistencia.tiene_discapacidad === undefined
+                ? ""
+                : asistencia.tiene_discapacidad ? "Sí" : "No",
+        "Categoría": asistencia.categoria || "",
+        "Subcategoría": asistencia.subcategoria || "",
+        "Actividad": asistencia.actividad || "",
         "Fecha y hora": new Date(asistencia.fecha_hora)
             .toLocaleString("es-CR", {
                 timeZone: "America/Costa_Rica"
-            })
+            }),
+        "Firma registrada": asistencia.firma || ""
     }));
 
     const hoja = XLSX.utils.json_to_sheet(registros);
+
+    hoja["!cols"] = [
+        { wch: 20 },
+        { wch: 35 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 35 },
+        { wch: 18 },
+        { wch: 45 },
+        { wch: 20 },
+        { wch: 25 },
+        { wch: 25 },
+        { wch: 35 },
+        { wch: 25 },
+        { wch: 35 }
+    ];
+
     const libro = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(libro, hoja, "Asistencias");
+    XLSX.utils.book_append_sheet(
+        libro,
+        hoja,
+        "Asistencias"
+    );
 
     const nombreSeguro = nombreActividad
         .replace(/[\\/:*?"<>|]/g, "_")
@@ -961,3 +1002,4 @@ async function descargarAsistencias(nombreActividad, mes) {
         `Asistencias_${nombreSeguro}_${mes}.xlsx`
     );
 }
+
