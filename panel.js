@@ -916,8 +916,6 @@ async function eliminarActividad(id) {
 }
 botonAgregarActividad.addEventListener("click", agregarNuevaActividad);
 
-
-
 async function descargarAsistencias(nombreActividad, mes) {
     try {
         if (!mes) {
@@ -1091,9 +1089,3 @@ async function descargarAsistencias(nombreActividad, mes) {
         alert("No se pudo descargar el Excel: " + error.message);
     }
 }
-
-        libro,
-        `Asistencias_${nombreSeguro}_${mes}.xlsx`
-    );
-}
-
