@@ -121,6 +121,195 @@ async function cargarIngresos() {
         tabla.appendChild(fila);
     });
 }
+
+ // ==========================================
+ // MÓDULO DE ATENCIÓN
+ // ==========================================
+
+const tablaAtenciones = document.getElementById("tablaAtenciones");
+const contadorAtenciones = document.getElementById("atencionesPendientes");
+
+let atencionesConocidas = new Set();
+let atencionesInicializadas = false;
+let consultaAtencionesEnCurso = false;
+let intervaloAtenciones = null;
+let contextoSonidoAtencion = null;
+
+// Preparar sonido después de la interacción del usuario.
+function prepararSonidoAtencion() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContext) return;
+
+        if (!contextoSonidoAtencion) {
+            contextoSonidoAtencion = new AudioContext();
+        }
+
+        if (contextoSonidoAtencion.state === "suspended") {
+            contextoSonidoAtencion.resume().catch(() => {});
+        }
+    } catch (error) {
+        console.warn("No se pudo preparar el sonido:", error);
+    }
+}
+
+// Reproducir una notificación breve.
+function reproducirSonidoAtencion() {
+    try {
+        if (!contextoSonidoAtencion ||
+            contextoSonidoAtencion.state !== "running") {
+            return;
+        }
+
+        const oscilador = contextoSonidoAtencion.createOscillator();
+        const volumen = contextoSonidoAtencion.createGain();
+
+        oscilador.type = "sine";
+        oscilador.frequency.setValueAtTime(
+            880,
+            contextoSonidoAtencion.currentTime
+        );
+
+        volumen.gain.setValueAtTime(
+            0.12,
+            contextoSonidoAtencion.currentTime
+        );
+
+        volumen.gain.exponentialRampToValueAtTime(
+            0.001,
+            contextoSonidoAtencion.currentTime + 0.35
+        );
+
+        oscilador.connect(volumen);
+        volumen.connect(contextoSonidoAtencion.destination);
+
+        oscilador.start();
+        oscilador.stop(contextoSonidoAtencion.currentTime + 0.35);
+
+    } catch (error) {
+        console.warn("No se pudo reproducir la alerta:", error);
+    }
+}
+
+// Consultar atenciones registradas en Supabase.
+async function cargarAtenciones() {
+    if (consultaAtencionesEnCurso) return;
+
+    consultaAtencionesEnCurso = true;
+
+    try {
+        const { data, error } = await supabasePanel.functions.invoke(
+            "consultar-ingresos"
+        );
+
+        if (error || !data ||
+            !Array.isArray(data.atenciones) ||
+            typeof data.totalAtenciones !== "number") {
+            console.error("Error al consultar atenciones:", error || data);
+
+            if (!atencionesInicializadas) {
+                tablaAtenciones.replaceChildren();
+
+                const fila = document.createElement("tr");
+                const celda = document.createElement("td");
+
+                celda.colSpan = 4;
+                celda.textContent = "No se pudieron cargar las atenciones.";
+
+                fila.appendChild(celda);
+                tablaAtenciones.appendChild(fila);
+            }
+
+            return;
+        }
+
+        contadorAtenciones.textContent = data.totalAtenciones;
+
+        const atenciones = data.atenciones;
+        const nuevosIds = new Set(
+            atenciones.map(atencion => String(atencion.id))
+        );
+
+        // No sonar por registros anteriores al inicio.
+        if (atencionesInicializadas) {
+            const hayNuevasAtenciones = atenciones.some(
+                atencion => !atencionesConocidas.has(String(atencion.id))
+            );
+
+            if (hayNuevasAtenciones) {
+                reproducirSonidoAtencion();
+            }
+        }
+
+        atencionesConocidas = nuevosIds;
+        atencionesInicializadas = true;
+
+        tablaAtenciones.replaceChildren();
+
+        if (atenciones.length === 0) {
+            const fila = document.createElement("tr");
+            const celda = document.createElement("td");
+
+            celda.colSpan = 4;
+            celda.textContent = "No hay atenciones registradas hoy.";
+
+            fila.appendChild(celda);
+            tablaAtenciones.appendChild(fila);
+            return;
+        }
+
+        atenciones.forEach(atencion => {
+            const fila = document.createElement("tr");
+
+            const hora = new Date(atencion.fecha_hora)
+                .toLocaleTimeString("es-CR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "America/Costa_Rica"
+                });
+
+            const valores = [
+                hora,
+                atencion.carnet || "—",
+                atencion.actividad,
+                "Registrado"
+            ];
+
+            valores.forEach(valor => {
+                const celda = document.createElement("td");
+                celda.textContent = valor;
+                fila.appendChild(celda);
+            });
+
+            tablaAtenciones.appendChild(fila);
+        });
+
+    } catch (error) {
+        console.error("Error inesperado en Atención:", error);
+    } finally {
+        consultaAtencionesEnCurso = false;
+    }
+}
+
+// Iniciar actualización automática.
+function iniciarAtenciones() {
+    prepararSonidoAtencion();
+
+    if (intervaloAtenciones !== null) {
+        clearInterval(intervaloAtenciones);
+    }
+
+    atencionesInicializadas = false;
+    atencionesConocidas = new Set();
+
+    cargarAtenciones();
+
+    intervaloAtenciones = setInterval(() => {
+        cargarAtenciones();
+    }, 10000);
+}
+
 // CONSULTAR SOLICITUDES DE CARNÉ
 
 const botonCargarSolicitudes = document.getElementById("botonCargarSolicitudes");
