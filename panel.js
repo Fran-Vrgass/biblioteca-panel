@@ -773,7 +773,20 @@ function mostrarActividades(actividades) {
         botonEstado.addEventListener("click", () => {
             cambiarEstadoActividad(actividad.id, !actividad.activa);
         });
+const selectorMes = document.createElement("input");
+selectorMes.type = "month";
 
+const hoy = new Date();
+const fechaCostaRica = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Costa_Rica",
+    year: "numeric",
+    month: "2-digit"
+}).format(hoy);
+
+selectorMes.value = fechaCostaRica;
+selectorMes.max = fechaCostaRica;
+
+celdaAccion.appendChild(selectorMes);
         celdaAccion.appendChild(botonEstado);
 
         if (!actividad.activa) {
@@ -792,7 +805,7 @@ botonExcel.type = "button";
 botonExcel.textContent = "Descargar Excel";
 
 botonExcel.addEventListener("click", () => {
-    descargarAsistencias(actividad.nombre);
+descargarAsistencias(actividad.nombre, selectorMes.value);
 });
 
 celdaAccion.appendChild(botonExcel);
@@ -885,11 +898,14 @@ async function eliminarActividad(id) {
 }
 botonAgregarActividad.addEventListener("click", agregarNuevaActividad);
 
-async function descargarAsistencias(nombreActividad) {
+async function descargarAsistencias(nombreActividad, mes) {
     const { data, error } = await supabasePanel.functions.invoke(
         "consultar-asistencias",
         {
-            body: { actividad: nombreActividad }
+     body: {
+    actividad: nombreActividad,
+    mes: mes
+}
         }
     );
 
@@ -924,6 +940,6 @@ async function descargarAsistencias(nombreActividad) {
 
     XLSX.writeFile(
         libro,
-        `Asistencias_${nombreSeguro}.xlsx`
+        `Asistencias_${nombreSeguro}_${mes}.xlsx`
     );
 }
