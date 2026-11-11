@@ -105,20 +105,79 @@ async function cargarIngresos() {
             timeZone: "America/Costa_Rica"
         });
 
-        const valores = [
-            hora,
-            ingreso.carnet,
-            ingreso.actividad,
-            "Registrado"
-        ];
+        
+            const valores = [
+                hora,
+                atencion.carnet || "—",
+                atencion.actividad,
+                atencion.atendida ? "Atendida" : "Pendiente"
+            ];
 
-        valores.forEach((valor) => {
-            const celda = document.createElement("td");
-            celda.textContent = valor ?? "";
-            fila.appendChild(celda);
-        });
+            valores.forEach(valor => {
+                const celda = document.createElement("td");
+                celda.textContent = valor;
+                fila.appendChild(celda);
+            });
 
-        tabla.appendChild(fila);
+            const celdaAccion = document.createElement("td");
+
+            if (!atencion.atendida) {
+                const botonAtender = document.createElement("button");
+
+                botonAtender.type = "button";
+                botonAtender.textContent = "✓";
+                botonAtender.title = "Marcar como atendida";
+                botonAtender.setAttribute(
+                    "aria-label",
+                    "Marcar atención como atendida"
+                );
+
+                botonAtender.addEventListener("click", async () => {
+                    botonAtender.disabled = true;
+                    botonAtender.textContent = "…";
+
+                    try {
+                        const { data, error } =
+                            await supabasePanel.functions.invoke(
+                                "marcar-atencion-atendida",
+                                {
+                                    body: { id: atencion.id }
+                                }
+                            );
+
+                        if (error || !data?.success) {
+                            alert(
+                                data?.error ||
+                                "No se pudo marcar la atención."
+                            );
+
+                            botonAtender.disabled = false;
+                            botonAtender.textContent = "✓";
+                            return;
+                        }
+
+                        await cargarAtenciones();
+
+                    } catch (error) {
+                        console.error(
+                            "Error al marcar atención:",
+                            error
+                        );
+
+                        alert("Ocurrió un error al marcar la atención.");
+
+                        botonAtender.disabled = false;
+                        botonAtender.textContent = "✓";
+                    }
+                });
+
+                celdaAccion.appendChild(botonAtender);
+            } else {
+                celdaAccion.textContent = "✓";
+            }
+
+            fila.appendChild(celdaAccion);
+            tablaAtenciones.appendChild(fila);
     });
 }
 
@@ -214,7 +273,7 @@ async function cargarAtenciones() {
                 const fila = document.createElement("tr");
                 const celda = document.createElement("td");
 
-                celda.colSpan = 4;
+                celda.colSpan = 5;
                 celda.textContent = "No se pudieron cargar las atenciones.";
 
                 fila.appendChild(celda);
