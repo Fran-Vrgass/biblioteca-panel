@@ -810,14 +810,14 @@ function mostrarActividades(actividades) {
 
         celdaAccion.appendChild(selectorMes);
 
-        // Descargar Excel de asistencias.
+        // Descargar PDF de asistencias.
         const botonExcel = document.createElement("button");
         botonExcel.type = "button";
-        botonExcel.textContent = "Descargar Excel";
+        botonExcel.textContent = "Descargar PDF";
 
         botonExcel.addEventListener("click", async () => {
             botonExcel.disabled = true;
-            botonExcel.textContent = "Preparando Excel...";
+            botonExcel.textContent = "Preparando PDF...";
 
             try {
                 await descargarAsistencias(
@@ -826,7 +826,7 @@ function mostrarActividades(actividades) {
                 );
             } finally {
                 botonExcel.disabled = false;
-                botonExcel.textContent = "Descargar Excel";
+                botonExcel.textContent = "Descargar PDF";
             }
         });
 
@@ -969,7 +969,8 @@ botonAgregarActividad.addEventListener(
     agregarNuevaActividad
 );
 
-// Descargar asistencias a Excel.
+
+ // Descargar asistencias a PDF con firmas visibles.
 async function descargarAsistencias(nombreActividad, mes) {
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes || "")) {
         alert("Seleccioná un mes válido.");
@@ -1005,7 +1006,7 @@ async function descargarAsistencias(nombreActividad, mes) {
 
             alert(
                 detalle ||
-                "No se pudieron consultar las asistencias. Verificá que la función consultar-asistencias esté desplegada."
+                "No se pudieron consultar las asistencias."
             );
             return;
         }
@@ -1020,80 +1021,324 @@ async function descargarAsistencias(nombreActividad, mes) {
             return;
         }
 
-        if (typeof XLSX === "undefined") {
+        if (
+            !window.jspdf ||
+            typeof window.jspdf.jsPDF !== "function"
+        ) {
             alert(
-                "No se cargó la biblioteca de Excel. Revisá que SheetJS esté incluido en panel.html."
+                "No se cargó jsPDF. Revisá las bibliotecas en panel.html."
             );
             return;
         }
 
-        const registros = data.asistencias.map(asistencia => ({
-            "Número de carné": asistencia.carnet || "",
-            "Nombre completo": asistencia.nombre_completo || "",
-            "Cédula": asistencia.cedula || "",
-            "Fecha de nacimiento": asistencia.fecha_nacimiento || "",
-            "Correo electrónico": asistencia.correo || "",
-            "Teléfono": asistencia.telefono || "",
-            "Domicilio": asistencia.domicilio || "",
-            "Tiene discapacidad":
+        const { jsPDF } = window.jspdf;
+
+        const pdf = new jsPDF({
+            orientation: "landscape",
+            unit: "mm",
+            format: "a3",
+            compress: true
+        });
+
+        if (typeof pdf.autoTable !== "function") {
+            alert(
+                "No se cargó AutoTable. Revisá panel.html."
+            );
+            return;
+        }
+
+        const asistencias = data.asistencias;
+        const anchoPagina = pdf.internal.pageSize.getWidth();
+        const altoPagina = pdf.internal.pageSize.getHeight();
+
+        // Encabezado del documento.
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+
+        pdf.text(
+            "Biblioteca Pública de Alajuela Miguel Obregón Lizano",
+            anchoPagina / 2,
+            13,
+            { align: "center" }
+        );
+
+        pdf.setFontSize(11);
+
+        pdf.text(
+            "Registro mensual de asistencias",
+            anchoPagina / 2,
+            20,
+            { align: "center" }
+        );
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+
+        pdf.text(
+            `Actividad: ${nombreActividad}`,
+            8,
+            29
+        );
+
+        pdf.text(
+            `Mes: ${mes}`,
+            8,
+            35
+        );
+
+        pdf.text(
+            `Total de asistencias: ${asistencias.length}`,
+            8,
+            41
+        );
+
+        // Diez columnas.
+        const encabezados = [[
+            "Número de carné",
+            "Nombre completo",
+            "Cédula",
+            "Fecha de nacimiento",
+            "Correo electrónico",
+            "Tiene discapacidad",
+            "Categoría",
+            "Actividad",
+            "Fecha y hora",
+            "Firma"
+        ]];
+
+        const filas = asistencias.map(asistencia => {
+            let fecha = "";
+
+            if (asistencia.fecha_hora) {
+                const fechaObjeto =
+                    new Date(asistencia.fecha_hora);
+
+                if (!Number.isNaN(fechaObjeto.getTime())) {
+                    fecha = fechaObjeto.toLocaleString(
+                        "es-CR",
+                        {
+                            timeZone: "America/Costa_Rica",
+                            hour12: false
+                        }
+                    );
+                }
+            }
+
+            return [
+                asistencia.carnet || "",
+                asistencia.nombre_completo || "",
+                asistencia.cedula || "",
+                asistencia.fecha_nacimiento || "",
+                asistencia.correo || "",
                 asistencia.tiene_discapacidad == null
                     ? ""
                     : asistencia.tiene_discapacidad
                         ? "Sí"
                         : "No",
-            "Categoría": asistencia.categoria || "",
-            "Subcategoría": asistencia.subcategoria || "",
-            "Actividad": asistencia.actividad || nombreActividad,
-            "Fecha y hora": asistencia.fecha_hora
-                ? new Date(asistencia.fecha_hora).toLocaleString(
-                    "es-CR",
-                    { timeZone: "America/Costa_Rica" }
-                )
-                : "",
-            "Firma registrada": asistencia.firma || ""
-        }));
+                asistencia.categoria || "",
+                asistencia.actividad || nombreActividad,
+                fecha,
+                ""
+            ];
+        });
 
-        const hoja = XLSX.utils.json_to_sheet(registros);
+        let firmasConError = 0;
 
-        hoja["!cols"] = [
-            { wch: 20 },
-            { wch: 35 },
-            { wch: 20 },
-            { wch: 20 },
-            { wch: 35 },
-            { wch: 18 },
-            { wch: 45 },
-            { wch: 20 },
-            { wch: 25 },
-            { wch: 25 },
-            { wch: 35 },
-            { wch: 25 },
-            { wch: 35 }
-        ];
+        // Tabla de asistencias.
+        pdf.autoTable({
+            head: encabezados,
+            body: filas,
+            startY: 46,
+            theme: "grid",
 
-        const libro = XLSX.utils.book_new();
+            margin: {
+                left: 8,
+                right: 8,
+                top: 15,
+                bottom: 15
+            },
 
-        XLSX.utils.book_append_sheet(
-            libro,
-            hoja,
-            "Asistencias"
-        );
+            styles: {
+                font: "helvetica",
+                fontSize: 7,
+                cellPadding: 2,
+                valign: "middle",
+                overflow: "linebreak",
+                lineColor: [170, 170, 170],
+                lineWidth: 0.15,
+                minCellHeight: 19
+            },
+
+            headStyles: {
+                fillColor: [35, 70, 105],
+                textColor: [255, 255, 255],
+                fontStyle: "bold",
+                halign: "center"
+            },
+
+            alternateRowStyles: {
+                fillColor: [245, 247, 250]
+            },
+
+            columnStyles: {
+                0: { cellWidth: 25 },
+                1: { cellWidth: 43 },
+                2: { cellWidth: 28 },
+                3: { cellWidth: 30 },
+                4: { cellWidth: 48 },
+                5: { cellWidth: 26 },
+                6: { cellWidth: 28 },
+                7: { cellWidth: 34 },
+                8: { cellWidth: 38 },
+                9: { cellWidth: 75 }
+            },
+
+            // Insertar firmas dentro de sus celdas.
+            didDrawCell: function (datosCelda) {
+                if (
+                    datosCelda.section !== "body" ||
+                    datosCelda.column.index !== 9
+                ) {
+                    return;
+                }
+
+                const asistencia =
+                    asistencias[datosCelda.row.index];
+
+                if (!asistencia) return;
+
+                const firma = asistencia.firma;
+
+                if (
+                    typeof firma !== "string" ||
+                    !/^data:image\/(png|jpe?g);base64,/i.test(firma)
+                ) {
+                    pdf.setFontSize(7);
+                    pdf.setTextColor(100, 100, 100);
+
+                    pdf.text(
+                        firma ? "Formato no compatible" : "Sin firma",
+                        datosCelda.cell.x + 3,
+                        datosCelda.cell.y + 10
+                    );
+
+                    pdf.setTextColor(25, 25, 25);
+
+                    if (firma) firmasConError++;
+                    return;
+                }
+
+                try {
+                    const formato =
+                        /^data:image\/jpe?g/i.test(firma)
+                            ? "JPEG"
+                            : "PNG";
+
+                    const propiedades =
+                        pdf.getImageProperties(firma);
+
+                    const anchoDisponible =
+                        datosCelda.cell.width - 6;
+
+                    const altoDisponible =
+                        datosCelda.cell.height - 4;
+
+                    const escala = Math.min(
+                        anchoDisponible / propiedades.width,
+                        altoDisponible / propiedades.height
+                    );
+
+                    const anchoFirma =
+                        propiedades.width * escala;
+
+                    const altoFirma =
+                        propiedades.height * escala;
+
+                    const posicionX =
+                        datosCelda.cell.x +
+                        (datosCelda.cell.width - anchoFirma) / 2;
+
+                    const posicionY =
+                        datosCelda.cell.y +
+                        (datosCelda.cell.height - altoFirma) / 2;
+
+                    pdf.addImage(
+                        firma,
+                        formato,
+                        posicionX,
+                        posicionY,
+                        anchoFirma,
+                        altoFirma
+                    );
+
+                } catch (errorFirma) {
+                    firmasConError++;
+
+                    console.error(
+                        "Error al insertar firma:",
+                        errorFirma
+                    );
+
+                    pdf.setFontSize(7);
+                    pdf.setTextColor(180, 40, 40);
+
+                    pdf.text(
+                        "Error de firma",
+                        datosCelda.cell.x + 3,
+                        datosCelda.cell.y + 10
+                    );
+
+                    pdf.setTextColor(25, 25, 25);
+                }
+            }
+        });
+
+        // Número de página.
+        const totalPaginas =
+            pdf.internal.getNumberOfPages();
+
+        for (
+            let numeroPagina = 1;
+            numeroPagina <= totalPaginas;
+            numeroPagina++
+        ) {
+            pdf.setPage(numeroPagina);
+
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(8);
+            pdf.setTextColor(90, 90, 90);
+
+            pdf.text(
+                `Página ${numeroPagina} de ${totalPaginas}`,
+                anchoPagina - 8,
+                altoPagina - 7,
+                { align: "right" }
+            );
+        }
 
         const nombreSeguro = nombreActividad
             .replace(/[\\/:*?"<>|]/g, "_")
             .slice(0, 80);
 
-        XLSX.writeFile(
-            libro,
-            `Asistencias_${nombreSeguro}_${mes}.xlsx`
+        pdf.save(
+            `Asistencias_${nombreSeguro}_${mes}.pdf`
         );
+
+        if (firmasConError > 0) {
+            alert(
+                `El PDF se generó, pero ${firmasConError} firma(s) no pudieron mostrarse.`
+            );
+        }
 
     } catch (error) {
         console.error(
-            "Error al generar Excel de asistencias:",
+            "Error al generar PDF de asistencias:",
             error
         );
 
-        alert("Detalle del error: " + (error?.message || String(error)));
+        alert(
+            "Detalle del error: " +
+            (error?.message || String(error))
+        );
     }
 }
