@@ -803,7 +803,10 @@ function mostrarActividades(actividades) {
         botonExcel.type = "button";
         botonExcel.textContent = "Descargar Excel";
 
-botonExcel.addEventListener("click", () => {
+      botonExcel.addEventListener("click", () => {
+    alert("PRUEBA DE DESCARGA");
+    alert("El botón de asistencias funciona");
+
     descargarAsistencias(
         actividad.nombre,
         selectorMes.value
@@ -916,175 +919,89 @@ async function eliminarActividad(id) {
 }
 botonAgregarActividad.addEventListener("click", agregarNuevaActividad);
 
+
 async function descargarAsistencias(nombreActividad, mes) {
-    try {
-        if (!mes) {
-            alert("Seleccioná un mes válido.");
-            return;
-        }
-
-        const { data, error } = await supabasePanel.functions.invoke(
-            "consultar-asistencias",
-            {
-                body: {
-                    actividad: nombreActividad,
-                    mes: mes
-                }
-            }
-        );
-
-        if (error || !data?.success) {
-            throw new Error(
-                data?.error ||
-                error?.message ||
-                "No se pudieron consultar las asistencias."
-            );
-        }
-
-        if (!data.asistencias?.length) {
-            alert("Esta actividad no tiene asistencias registradas en el mes seleccionado.");
-            return;
-        }
-
-        if (typeof ExcelJS === "undefined") {
-            throw new Error("No se pudo cargar ExcelJS. Revisá index.html.");
-        }
-
-        const libro = new ExcelJS.Workbook();
-        const hoja = libro.addWorksheet("Asistencias");
-
-        hoja.columns = [
-            { header: "Número de carné", key: "carnet", width: 20 },
-            { header: "Nombre completo", key: "nombre", width: 35 },
-            { header: "Cédula", key: "cedula", width: 20 },
-            { header: "Fecha de nacimiento", key: "nacimiento", width: 22 },
-            { header: "Correo electrónico", key: "correo", width: 35 },
-            { header: "Teléfono", key: "telefono", width: 20 },
-            { header: "Domicilio", key: "domicilio", width: 45 },
-            { header: "Tiene discapacidad", key: "discapacidad", width: 22 },
-            { header: "Categoría", key: "categoria", width: 25 },
-            { header: "Subcategoría", key: "subcategoria", width: 25 },
-            { header: "Actividad", key: "actividad", width: 35 },
-            { header: "Fecha y hora", key: "fecha", width: 25 },
-            { header: "Firma registrada", key: "firma", width: 27 }
-        ];
-
-        const encabezado = hoja.getRow(1);
-        encabezado.font = {
-            bold: true,
-            color: { argb: "FFFFFFFF" }
-        };
-        encabezado.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FF17365D" }
-        };
-        encabezado.height = 28;
-
-        hoja.views = [
-            { state: "frozen", ySplit: 1 }
-        ];
-
-        for (const asistencia of data.asistencias) {
-            const fila = hoja.addRow({
-                carnet: asistencia.carnet || "",
-                nombre: asistencia.nombre_completo || "",
-                cedula: asistencia.cedula || "",
-                nacimiento: asistencia.fecha_nacimiento || "",
-                correo: asistencia.correo || "",
-                telefono: asistencia.telefono || "",
-                domicilio: asistencia.domicilio || "",
-                discapacidad:
-                    asistencia.tiene_discapacidad == null
-                        ? ""
-                        : asistencia.tiene_discapacidad ? "Sí" : "No",
-                categoria: asistencia.categoria || "",
-                subcategoria: asistencia.subcategoria || "",
-                actividad: asistencia.actividad || "",
-                fecha: asistencia.fecha_hora
-                    ? new Date(asistencia.fecha_hora).toLocaleString(
-                        "es-CR",
-                        { timeZone: "America/Costa_Rica" }
-                    )
-                    : "",
-                firma: ""
-            });
-
-            fila.height = 50;
-            fila.alignment = {
-                vertical: "middle"
-            };
-
-            if (asistencia.firma) {
-                try {
-                    const coincidencia = asistencia.firma.match(
-                        /^data:image\/(png|jpeg|jpg);base64,/i
-                    );
-
-                    if (coincidencia) {
-                        const extension =
-                            coincidencia[1].toLowerCase() === "jpg"
-                                ? "jpeg"
-                                : coincidencia[1].toLowerCase();
-
-                        const imagenId = libro.addImage({
-                            base64: asistencia.firma,
-                            extension: extension
-                        });
-
-                        hoja.addImage(imagenId, {
-                            tl: {
-                                col: 12.15,
-                                row: fila.number - 1 + 0.1
-                            },
-                            ext: {
-                                width: 150,
-                                height: 55
-                            }
-                        });
-                    }
-                } catch (errorFirma) {
-                    console.error(
-                        "No se pudo insertar una firma:",
-                        errorFirma
-                    );
-                }
-            }
-        }
-
-        hoja.autoFilter = {
-            from: "A1",
-            to: "M1"
-        };
-
-        const archivo = await libro.xlsx.writeBuffer();
-
-        const blob = new Blob(
-            [archivo],
-            {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            }
-        );
-
-        const url = URL.createObjectURL(blob);
-        const enlace = document.createElement("a");
-
-        const nombreSeguro = nombreActividad
-            .replace(/[\\/:*?"<>|]/g, "_")
-            .slice(0, 80);
-
-        enlace.href = url;
-        enlace.download = `Asistencias_${nombreSeguro}_${mes}.xlsx`;
-
-        document.body.appendChild(enlace);
-        enlace.click();
-        enlace.remove();
-
-        setTimeout(() => {
-            URL.revokeObjectURL(url);
-        }, 1000);
-            } catch (error) {
-        console.error("Error al generar Excel:", error);
-        alert("No se pudo descargar el Excel: " + error.message);
+    if (!mes) {
+        alert("Seleccioná un mes válido.");
+        return;
     }
+
+    const { data, error } = await supabasePanel.functions.invoke(
+        "consultar-asistencias",
+        {
+            body: {
+                actividad: nombreActividad,
+                mes: mes
+            }
+        }
+    );
+
+    if (error || !data?.success) {
+        alert(data?.error || "No se pudieron consultar las asistencias.");
+        console.error("Error al descargar asistencias:", error || data);
+        return;
+    }
+
+    if (!data.asistencias?.length) {
+        alert("Esta actividad no tiene asistencias registradas en el mes seleccionado.");
+        return;
+    }
+
+    const registros = data.asistencias.map(asistencia => ({
+        "Número de carné": asistencia.carnet || "",
+        "Nombre completo": asistencia.nombre_completo || "",
+        "Cédula": asistencia.cedula || "",
+        "Fecha de nacimiento": asistencia.fecha_nacimiento || "",
+        "Correo electrónico": asistencia.correo || "",
+        "Teléfono": asistencia.telefono || "",
+        "Domicilio": asistencia.domicilio || "",
+        "Tiene discapacidad":
+            asistencia.tiene_discapacidad === null ||
+            asistencia.tiene_discapacidad === undefined
+                ? ""
+                : asistencia.tiene_discapacidad ? "Sí" : "No",
+        "Categoría": asistencia.categoria || "",
+        "Subcategoría": asistencia.subcategoria || "",
+        "Actividad": asistencia.actividad || "",
+        "Fecha y hora": new Date(asistencia.fecha_hora)
+            .toLocaleString("es-CR", {
+                timeZone: "America/Costa_Rica"
+            }),
+        "Firma registrada": asistencia.firma || ""
+    }));
+
+    const hoja = XLSX.utils.json_to_sheet(registros);
+
+    hoja["!cols"] = [
+        { wch: 20 },
+        { wch: 35 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 35 },
+        { wch: 18 },
+        { wch: 45 },
+        { wch: 20 },
+        { wch: 25 },
+        { wch: 25 },
+        { wch: 35 },
+        { wch: 25 },
+        { wch: 35 }
+    ];
+
+    const libro = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        libro,
+        hoja,
+        "Asistencias"
+    );
+
+    const nombreSeguro = nombreActividad
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .slice(0, 80);
+
+    XLSX.writeFile(
+        libro,
+        `Asistencias_${nombreSeguro}_${mes}.xlsx`
+    );
 }
