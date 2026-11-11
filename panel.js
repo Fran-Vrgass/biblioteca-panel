@@ -1088,8 +1088,3 @@ async function descargarAsistencias(nombreActividad, mes) {
         alert("No se pudo descargar el Excel: " + error.message);
     }
 }
-    } catch (error) {
-        console.error("Error al generar Excel:", error);
-        alert("No se pudo descargar el Excel: " + error.message);
-    }
-}
