@@ -803,12 +803,14 @@ function mostrarActividades(actividades) {
         botonExcel.type = "button";
         botonExcel.textContent = "Descargar Excel";
 
-        botonExcel.addEventListener("click", () => {
-            descargarAsistencias(
-                actividad.nombre,
-                selectorMes.value
-            );
-        });
+       botonExcel.addEventListener("click", () => {
+    alert("El botón de asistencias funciona");
+
+    descargarAsistencias(
+        actividad.nombre,
+        selectorMes.value
+    );
+});
 
         celdaAccion.appendChild(botonExcel);
 
