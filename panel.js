@@ -747,6 +747,7 @@ async function cargarActividades() {
     mostrarActividades(data.actividades);
 }
 
+
 function mostrarActividades(actividades) {
     tablaActividades.replaceChildren();
 
@@ -768,27 +769,50 @@ function mostrarActividades(actividades) {
 
         const botonEstado = document.createElement("button");
         botonEstado.type = "button";
-        botonEstado.textContent = actividad.activa ? "Desactivar" : "Activar";
+        botonEstado.textContent = actividad.activa
+            ? "Desactivar"
+            : "Activar";
 
         botonEstado.addEventListener("click", () => {
             cambiarEstadoActividad(actividad.id, !actividad.activa);
         });
-const selectorMes = document.createElement("input");
-selectorMes.type = "month";
 
-const hoy = new Date();
-const fechaCostaRica = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Costa_Rica",
-    year: "numeric",
-    month: "2-digit"
-}).format(hoy);
-
-selectorMes.value = fechaCostaRica;
-selectorMes.max = fechaCostaRica;
-
-celdaAccion.appendChild(selectorMes);
         celdaAccion.appendChild(botonEstado);
 
+        // SELECCIONAR MES
+        const selectorMes = document.createElement("input");
+        selectorMes.type = "month";
+
+        const partesFecha = new Intl.DateTimeFormat("en-US", {
+            timeZone: "America/Costa_Rica",
+            year: "numeric",
+            month: "2-digit"
+        }).formatToParts(new Date());
+
+        const anio = partesFecha.find(p => p.type === "year").value;
+        const mesActual = partesFecha.find(p => p.type === "month").value;
+        const fechaCostaRica = `${anio}-${mesActual}`;
+
+        selectorMes.value = fechaCostaRica;
+        selectorMes.max = fechaCostaRica;
+
+        celdaAccion.appendChild(selectorMes);
+
+        // DESCARGAR EXCEL EN TODAS LAS ACTIVIDADES
+        const botonExcel = document.createElement("button");
+        botonExcel.type = "button";
+        botonExcel.textContent = "Descargar Excel";
+
+        botonExcel.addEventListener("click", () => {
+            descargarAsistencias(
+                actividad.nombre,
+                selectorMes.value
+            );
+        });
+
+        celdaAccion.appendChild(botonExcel);
+
+        // ELIMINAR SOLO ACTIVIDADES INACTIVAS
         if (!actividad.activa) {
             const botonEliminar = document.createElement("button");
             botonEliminar.type = "button";
@@ -799,20 +823,14 @@ celdaAccion.appendChild(selectorMes);
             });
 
             celdaAccion.appendChild(botonEliminar);
-            
-const botonExcel = document.createElement("button");
-botonExcel.type = "button";
-botonExcel.textContent = "Descargar Excel";
-
-botonExcel.addEventListener("click", () => {
-descargarAsistencias(actividad.nombre, selectorMes.value);
-});
-
-celdaAccion.appendChild(botonExcel);
-
         }
 
-        fila.append(celdaNombre, celdaEstado, celdaAccion);
+        fila.append(
+            celdaNombre,
+            celdaEstado,
+            celdaAccion
+        );
+
         tablaActividades.appendChild(fila);
     });
 }
