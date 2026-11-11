@@ -1094,6 +1094,6 @@ async function descargarAsistencias(nombreActividad, mes) {
             error
         );
 
-        alert("No se pudo generar el Excel de asistencias.");
+        alert("Detalle del error: " + (error?.message || String(error)));
     }
 }
