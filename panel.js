@@ -748,6 +748,7 @@ async function cargarActividades() {
 }
 
 
+
 function mostrarActividades(actividades) {
     tablaActividades.replaceChildren();
 
@@ -756,14 +757,16 @@ function mostrarActividades(actividades) {
         return;
     }
 
-    actividades.forEach(actividad => {
+    actividades.forEach((actividad) => {
         const fila = document.createElement("tr");
 
         const celdaNombre = document.createElement("td");
         celdaNombre.textContent = actividad.nombre;
 
         const celdaEstado = document.createElement("td");
-        celdaEstado.textContent = actividad.activa ? "Activa" : "Inactiva";
+        celdaEstado.textContent = actividad.activa
+            ? "Activa"
+            : "Inactiva";
 
         const celdaAccion = document.createElement("td");
 
@@ -774,12 +777,15 @@ function mostrarActividades(actividades) {
             : "Activar";
 
         botonEstado.addEventListener("click", () => {
-            cambiarEstadoActividad(actividad.id, !actividad.activa);
+            cambiarEstadoActividad(
+                actividad.id,
+                !actividad.activa
+            );
         });
 
         celdaAccion.appendChild(botonEstado);
 
-        // SELECCIONAR MES
+        // Seleccionar mes.
         const selectorMes = document.createElement("input");
         selectorMes.type = "month";
 
@@ -789,8 +795,14 @@ function mostrarActividades(actividades) {
             month: "2-digit"
         }).formatToParts(new Date());
 
-        const anio = partesFecha.find(p => p.type === "year").value;
-        const mesActual = partesFecha.find(p => p.type === "month").value;
+        const anio = partesFecha.find(
+            p => p.type === "year"
+        ).value;
+
+        const mesActual = partesFecha.find(
+            p => p.type === "month"
+        ).value;
+
         const fechaCostaRica = `${anio}-${mesActual}`;
 
         selectorMes.value = fechaCostaRica;
@@ -798,24 +810,29 @@ function mostrarActividades(actividades) {
 
         celdaAccion.appendChild(selectorMes);
 
-        // DESCARGAR EXCEL EN TODAS LAS ACTIVIDADES
+        // Descargar Excel de asistencias.
         const botonExcel = document.createElement("button");
         botonExcel.type = "button";
         botonExcel.textContent = "Descargar Excel";
 
-      botonExcel.addEventListener("click", () => {
-    alert("PRUEBA DE DESCARGA");
-    alert("El botón de asistencias funciona");
+        botonExcel.addEventListener("click", async () => {
+            botonExcel.disabled = true;
+            botonExcel.textContent = "Preparando Excel...";
 
-    descargarAsistencias(
-        actividad.nombre,
-        selectorMes.value
-    );
-});
+            try {
+                await descargarAsistencias(
+                    actividad.nombre,
+                    selectorMes.value
+                );
+            } finally {
+                botonExcel.disabled = false;
+                botonExcel.textContent = "Descargar Excel";
+            }
+        });
 
         celdaAccion.appendChild(botonExcel);
 
-        // ELIMINAR SOLO ACTIVIDADES INACTIVAS
+        // Eliminar actividades inactivas.
         if (!actividad.activa) {
             const botonEliminar = document.createElement("button");
             botonEliminar.type = "button";
@@ -838,59 +855,81 @@ function mostrarActividades(actividades) {
     });
 }
 
+// Agregar actividad.
 async function agregarNuevaActividad() {
     const nombre = nombreNuevaActividad.value.trim();
 
     if (!nombre) {
-        mensajeActividad.textContent = "Escribí el nombre de la actividad.";
+        mensajeActividad.textContent =
+            "Escribí el nombre de la actividad.";
         return;
     }
 
     botonAgregarActividad.disabled = true;
 
-    const { data, error } = await supabasePanel.functions.invoke(
-        "administrar-actividades",
-        {
-            body: {
-                operacion: "agregar",
-                nombre
-            }
+    try {
+        const { data, error } =
+            await supabasePanel.functions.invoke(
+                "administrar-actividades",
+                {
+                    body: {
+                        operacion: "agregar",
+                        nombre
+                    }
+                }
+            );
+
+        if (error || !data?.success) {
+            mensajeActividad.textContent =
+                data?.error || "No se pudo agregar la actividad.";
+            return;
         }
-    );
 
-    botonAgregarActividad.disabled = false;
-
-    if (error || !data?.success) {
+        nombreNuevaActividad.value = "";
         mensajeActividad.textContent =
-            data?.error || "No se pudo agregar la actividad.";
-        return;
+            "Actividad agregada correctamente.";
+
+        await cargarActividades();
+
+    } catch (error) {
+        console.error("Error al agregar actividad:", error);
+        mensajeActividad.textContent =
+            "Ocurrió un error al agregar la actividad.";
+
+    } finally {
+        botonAgregarActividad.disabled = false;
     }
-
-    nombreNuevaActividad.value = "";
-    mensajeActividad.textContent = "Actividad agregada correctamente.";
-
-    await cargarActividades();
 }
 
+// Activar o desactivar actividad.
 async function cambiarEstadoActividad(id, activa) {
-    const { data, error } = await supabasePanel.functions.invoke(
-        "administrar-actividades",
-        {
-            body: {
-                operacion: "cambiar_estado",
-                id,
-                activa
-            }
+    try {
+        const { data, error } =
+            await supabasePanel.functions.invoke(
+                "administrar-actividades",
+                {
+                    body: {
+                        operacion: "cambiar_estado",
+                        id,
+                        activa
+                    }
+                }
+            );
+
+        if (error || !data?.success) {
+            alert(data?.error || "No se pudo cambiar el estado.");
+            return;
         }
-    );
 
-    if (error || !data?.success) {
-        alert(data?.error || "No se pudo cambiar el estado.");
-        return;
+        await cargarActividades();
+
+    } catch (error) {
+        console.error("Error al cambiar estado:", error);
+        alert("No se pudo cambiar el estado.");
     }
-
-    await cargarActividades();
 }
+
+// Eliminar actividad.
 async function eliminarActividad(id) {
     const confirmar = confirm(
         "¿Estás seguro de que querés eliminar esta actividad? Esta acción no se puede deshacer."
@@ -898,110 +937,163 @@ async function eliminarActividad(id) {
 
     if (!confirmar) return;
 
-    const { data, error } = await supabasePanel.functions.invoke(
-        "administrar-actividades",
-        {
-            body: {
-                operacion: "eliminar",
-                id: Number(id)
-            }
+    try {
+        const { data, error } =
+            await supabasePanel.functions.invoke(
+                "administrar-actividades",
+                {
+                    body: {
+                        operacion: "eliminar",
+                        id: Number(id)
+                    }
+                }
+            );
+
+        if (error || !data?.success) {
+            alert(data?.error || "No se pudo eliminar la actividad.");
+            return;
         }
-    );
 
-    if (error || !data?.success) {
-        alert(data?.error || "No se pudo eliminar la actividad.");
-        return;
+        alert("Actividad eliminada correctamente.");
+
+        await cargarActividades();
+
+    } catch (error) {
+        console.error("Error al eliminar actividad:", error);
+        alert("No se pudo eliminar la actividad.");
     }
-
-    alert("Actividad eliminada correctamente.");
-
-    await cargarActividades();
 }
-botonAgregarActividad.addEventListener("click", agregarNuevaActividad);
 
+botonAgregarActividad.addEventListener(
+    "click",
+    agregarNuevaActividad
+);
 
+// Descargar asistencias a Excel.
 async function descargarAsistencias(nombreActividad, mes) {
-    if (!mes) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes || "")) {
         alert("Seleccioná un mes válido.");
         return;
     }
 
-    const { data, error } = await supabasePanel.functions.invoke(
-        "consultar-asistencias",
-        {
-            body: {
-                actividad: nombreActividad,
-                mes: mes
+    try {
+        const { data, error } =
+            await supabasePanel.functions.invoke(
+                "consultar-asistencias",
+                {
+                    body: {
+                        actividad: nombreActividad,
+                        mes: mes
+                    }
+                }
+            );
+
+        if (error || !data?.success) {
+            let detalle = data?.error;
+
+            if (!detalle && error?.context?.json) {
+                try {
+                    const respuesta = await error.context.json();
+                    detalle = respuesta?.error || respuesta?.message;
+                } catch (_) {}
             }
+
+            console.error(
+                "Error al consultar asistencias:",
+                error || data
+            );
+
+            alert(
+                detalle ||
+                "No se pudieron consultar las asistencias. Verificá que la función consultar-asistencias esté desplegada."
+            );
+            return;
         }
-    );
 
-    if (error || !data?.success) {
-        alert(data?.error || "No se pudieron consultar las asistencias.");
-        console.error("Error al descargar asistencias:", error || data);
-        return;
+        if (
+            !Array.isArray(data.asistencias) ||
+            data.asistencias.length === 0
+        ) {
+            alert(
+                "Esta actividad no tiene asistencias registradas en el mes seleccionado."
+            );
+            return;
+        }
+
+        if (typeof XLSX === "undefined") {
+            alert(
+                "No se cargó la biblioteca de Excel. Revisá que SheetJS esté incluido en panel.html."
+            );
+            return;
+        }
+
+        const registros = data.asistencias.map(asistencia => ({
+            "Número de carné": asistencia.carnet || "",
+            "Nombre completo": asistencia.nombre_completo || "",
+            "Cédula": asistencia.cedula || "",
+            "Fecha de nacimiento": asistencia.fecha_nacimiento || "",
+            "Correo electrónico": asistencia.correo || "",
+            "Teléfono": asistencia.telefono || "",
+            "Domicilio": asistencia.domicilio || "",
+            "Tiene discapacidad":
+                asistencia.tiene_discapacidad == null
+                    ? ""
+                    : asistencia.tiene_discapacidad
+                        ? "Sí"
+                        : "No",
+            "Categoría": asistencia.categoria || "",
+            "Subcategoría": asistencia.subcategoria || "",
+            "Actividad": asistencia.actividad || nombreActividad,
+            "Fecha y hora": asistencia.fecha_hora
+                ? new Date(asistencia.fecha_hora).toLocaleString(
+                    "es-CR",
+                    { timeZone: "America/Costa_Rica" }
+                )
+                : "",
+            "Firma registrada": asistencia.firma || ""
+        }));
+
+        const hoja = XLSX.utils.json_to_sheet(registros);
+
+        hoja["!cols"] = [
+            { wch: 20 },
+            { wch: 35 },
+            { wch: 20 },
+            { wch: 20 },
+            { wch: 35 },
+            { wch: 18 },
+            { wch: 45 },
+            { wch: 20 },
+            { wch: 25 },
+            { wch: 25 },
+            { wch: 35 },
+            { wch: 25 },
+            { wch: 35 }
+        ];
+
+        const libro = XLSX.utils.book_new();
+
+        XLSX.utils.book_append_sheet(
+            libro,
+            hoja,
+            "Asistencias"
+        );
+
+        const nombreSeguro = nombreActividad
+            .replace(/[\\/:*?"<>|]/g, "_")
+            .slice(0, 80);
+
+        XLSX.writeFile(
+            libro,
+            `Asistencias_${nombreSeguro}_${mes}.xlsx`
+        );
+
+    } catch (error) {
+        console.error(
+            "Error al generar Excel de asistencias:",
+            error
+        );
+
+        alert("No se pudo generar el Excel de asistencias.");
     }
-
-    if (!data.asistencias?.length) {
-        alert("Esta actividad no tiene asistencias registradas en el mes seleccionado.");
-        return;
-    }
-
-    const registros = data.asistencias.map(asistencia => ({
-        "Número de carné": asistencia.carnet || "",
-        "Nombre completo": asistencia.nombre_completo || "",
-        "Cédula": asistencia.cedula || "",
-        "Fecha de nacimiento": asistencia.fecha_nacimiento || "",
-        "Correo electrónico": asistencia.correo || "",
-        "Teléfono": asistencia.telefono || "",
-        "Domicilio": asistencia.domicilio || "",
-        "Tiene discapacidad":
-            asistencia.tiene_discapacidad === null ||
-            asistencia.tiene_discapacidad === undefined
-                ? ""
-                : asistencia.tiene_discapacidad ? "Sí" : "No",
-        "Categoría": asistencia.categoria || "",
-        "Subcategoría": asistencia.subcategoria || "",
-        "Actividad": asistencia.actividad || "",
-        "Fecha y hora": new Date(asistencia.fecha_hora)
-            .toLocaleString("es-CR", {
-                timeZone: "America/Costa_Rica"
-            }),
-        "Firma registrada": asistencia.firma || ""
-    }));
-
-    const hoja = XLSX.utils.json_to_sheet(registros);
-
-    hoja["!cols"] = [
-        { wch: 20 },
-        { wch: 35 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 35 },
-        { wch: 18 },
-        { wch: 45 },
-        { wch: 20 },
-        { wch: 25 },
-        { wch: 25 },
-        { wch: 35 },
-        { wch: 25 },
-        { wch: 35 }
-    ];
-
-    const libro = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(
-        libro,
-        hoja,
-        "Asistencias"
-    );
-
-    const nombreSeguro = nombreActividad
-        .replace(/[\\/:*?"<>|]/g, "_")
-        .slice(0, 80);
-
-    XLSX.writeFile(
-        libro,
-        `Asistencias_${nombreSeguro}_${mes}.xlsx`
-    );
 }
