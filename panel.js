@@ -1083,7 +1083,11 @@ async function descargarAsistencias(nombreActividad, mes) {
         setTimeout(() => {
             URL.revokeObjectURL(url);
         }, 1000);
-
+            } catch (error) {
+        console.error("Error al generar Excel:", error);
+        alert("No se pudo descargar el Excel: " + error.message);
+    }
+}
     } catch (error) {
         console.error("Error al generar Excel:", error);
         alert("No se pudo descargar el Excel: " + error.message);
