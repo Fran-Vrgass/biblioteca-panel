@@ -52,6 +52,7 @@ document.querySelector(".panel").style.display = "block";
 
 cargarIngresos();
 cargarActividades();
+iniciarAtenciones();
 });
 
 // CONSULTAR INGRESOS REALES DE SUPABASE
