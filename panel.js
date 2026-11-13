@@ -478,7 +478,7 @@ function abrirFichaSolicitud(solicitud) {
         solicitud.tiene_discapacidad ? "Sí" : "No";
 
     document.getElementById("categoriaSolicitud").value =
-        solicitud.categoria || "Asociado";
+        solicitud.categoria || "Usuario";
 
     document.getElementById("subcategoriaSolicitud").value =
         solicitud.subcategoria || "";
@@ -498,7 +498,7 @@ const categoriaSolicitud = document.getElementById("categoriaSolicitud");
 categoriaSolicitud.addEventListener("change", actualizarSubcategoria);
 
 function actualizarSubcategoria() {
-    const esPersonal = categoriaSolicitud.value === "Personal";
+    const esPersonal = categoriaSolicitud.value === "Funcionario";
 
     document.getElementById("contenedorSubcategoria").style.display =
         esPersonal ? "block" : "none";
@@ -527,8 +527,8 @@ async function aprobarSolicitud() {
 
     const mensaje = document.getElementById("mensajeRevision");
 
-    if (categoria === "Personal" && !subcategoria) {
-        mensaje.textContent = "Seleccioná el tipo de personal.";
+    if (categoria === "Funcionario" && !subcategoria) {
+        mensaje.textContent = "Seleccioná el tipo de funcionario.";
         return;
     }
 
@@ -542,7 +542,7 @@ async function aprobarSolicitud() {
             body: {
                 solicitud_id: Number(solicitudId),
                 categoria: categoria,
-                subcategoria: categoria === "Personal" ? subcategoria : null
+                subcategoria: categoria === "Funcionario" ? subcategoria : null
             }
         }
     );
